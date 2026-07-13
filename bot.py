@@ -62,7 +62,7 @@ active_games = {}
 pending_orders = {}
 
 SHOP_PRICES = {"assets": 500, "draw": 1000, "video": 2000}
-PAINTERS = ["@Arabic_Painter1", "@alhilal_bahraini", "@BrahimAnimation", "@yamenhazani"]
+PAINTERS = ["@Arabic_Painter1", "@alhilal_bahraini", "@BrahimAnimation", "@moha1234561100"]
 
 funny_responses = {
     "win": ["🎉 {name} فاز! ذكاء خارق 😂", "🏆 {name} كسب! التاج لايق عليك 🤣", "🔥 {name} دمر الجميع! أسطورة!", "😎 {name} جابها في الثمانيات! وحش!", "🧠 {name} مخه شغال صح، عاش!"],
