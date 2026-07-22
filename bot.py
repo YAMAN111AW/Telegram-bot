@@ -1,3 +1,5 @@
+import os
+os.system("apt-get update && apt-get install -y libpq-dev")
 import telebot
 import random
 import time
