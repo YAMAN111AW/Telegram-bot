@@ -1,5 +1,3 @@
-import os
-os.system("apt-get update && apt-get install -y libpq-dev")
 import telebot
 import random
 import time
@@ -59,12 +57,149 @@ threading.Thread(target=run_flask, daemon=True).start()
 
 # ------------------- قواميس الألعاب -------------------
 active_games = {}
+games_lock = threading.Lock()  # ✅ إضافة القفل المفقود
 pending_orders = {}
-pending_assets = {}  # لتتبع طلبات الملحقات
+pending_assets = {}
 
 SHOP_PRICES = {"assets": 500, "draw": 1000, "video": 2000}
 ASSET_TYPES = ["عيون", "عشوائية", "كرات وخرائط أعلام"]
 PAINTERS = ["@Arabic_Painter1", "@alhilal_bahraini", "@BrahimAnimation", "@moha1234561100"]
+
+# ✅ جميع التعريفات الناقصة
+TYPING_SENTENCES = [
+    "البطة مش دايماً مؤنثة",
+    "اللي بيته من قزاز لا يرمي الناس بالطوب",
+    "الوقت كالسيف إن لم تقطعه قطعك",
+    "العلم في الصغر كالنقش على الحجر",
+    "من جد وجد ومن زرع حصد"
+]
+
+SCRAMBLE_WORDS = ["تفاحة", "كمبيوتر", "هرم", "شمس", "قمر", "مدرسة", "كتاب", "بحر"]
+
+COUNTRIES = {
+    "مصر": "القاهرة",
+    "السعودية": "الرياض",
+    "الإمارات": "أبوظبي",
+    "المغرب": "الرباط",
+    "الجزائر": "الجزائر",
+    "تونس": "تونس",
+    "لبنان": "بيروت",
+    "الأردن": "عمان",
+    "الكويت": "الكويت",
+    "قطر": "الدوحة"
+}
+
+PROVERBS = {
+    "اللي استحوا": "ماتوا",
+    "اللي بيته من قزاز": "لا يرمي الناس بالطوب",
+    "القرد في عين أمه": "غزال",
+    "إدي العيش لخبازه": "ولو أكل نصه",
+    "جاجة حفرت على راسها": "عفرت"
+}
+
+OPPOSITES = {
+    "كبير": "صغير",
+    "طويل": "قصير",
+    "جميل": "قبيح",
+    "سريع": "بطيء",
+    "قوي": "ضعيف",
+    "غني": "فقير",
+    "حار": "بارد"
+}
+
+FAST_WORDS = ["أسد", "وردة", "سماء", "كرة", "بحر", "قلم", "نجم", "شجرة"]
+
+TRIVIA = {
+    "ما هي أكبر قارة في العالم؟": "آسيا",
+    "ما هو أطول نهر في العالم؟": "النيل",
+    "كم عدد ألوان قوس قزح؟": "7",
+    "ما هو الكوكب الأحمر؟": "المريخ",
+    "من هو مخترع المصباح الكهربائي؟": "إديسون"
+}
+
+RIDDLES = {
+    "ما هو الشيء الذي يمشي بلا رجلين ويبكي بلا عينين؟": "السحاب",
+    "ما هو الشيء الذي كلما أخذت منه كبر؟": "الحفرة",
+    "ما هو الشيء الذي له أسنان ولا يعض؟": "المشط",
+    "ما هو الشيء الذي يكتب ولا يقرأ؟": "القلم"
+}
+
+TRANSLATE_WORDS = {
+    "Book": "كتاب",
+    "Sun": "شمس",
+    "Moon": "قمر",
+    "Water": "ماء",
+    "Fire": "نار"
+}
+
+EMOJI_GUESS = {
+    "🦁👑": "الأسد الملك",
+    "🚢💥🧊": "تيتانيك",
+    "🧙‍♂️⚡🏰": "هاري بوتر",
+    "🕷️🦸‍♂️": "سبايدر مان"
+}
+
+DIALECTS = {
+    "شنو معنى كلمة 'دريوي' في اللهجة المغربية؟": "شخص لطيف",
+    "ما معنى 'قوطي' في اللهجة العراقية؟": "علبة",
+    "إيش تعني 'يديني' في اللهجة السعودية؟": "يعطيني"
+}
+
+# الألعاب الجديدة
+CROSSWORD = {
+    "ما هو الشيء الذي يمشي بلا رجلين ويطير بلا أجنحة؟": "الوقت",
+    "ما هو الشيء الذي كلما زاد نقص؟": "العمر",
+    "ما هو الشيء الذي له أوراق وليس شجرة؟": "الكتاب"
+}
+
+FOOD_CHAIN = {
+    "ماذا يأكل الأسد؟": "اللحم",
+    "ماذا تأكل البقرة؟": "العشب",
+    "ماذا يأكل الدب؟": "السمك"
+}
+
+MATH_PUZZLES = {
+    "ما هو العدد الذي إذا ضربته في نفسه وأضفت 5 يصبح 30؟": "5",
+    "ما هو العدد الذي إذا قسمته على 2 وأضفت 3 يصبح 10؟": "14"
+}
+
+LOGIC_PUZZLES = {
+    "ما هو الشيء الذي تراه في الليل ولا تراه في النهار؟": "القمر",
+    "ما هو الشيء الذي يدخل الماء ولا يبتل؟": "الضوء"
+}
+
+MISSING_WORDS = {
+    "أكمل الجملة: الشمس تشرق من ...": "الشرق",
+    "أكمل الجملة: البحر ...": "أزرق"
+}
+
+SHAPES = {
+    "ما هو الشكل الذي له 3 أضلاع؟": "مثلث",
+    "ما هو الشكل الذي له 4 أضلاع متساوية؟": "مربع"
+}
+
+HISTORY_DATES = {
+    "في أي عام سقطت الخلافة العثمانية؟": "1924",
+    "في أي عام كانت الثورة الفرنسية؟": "1789"
+}
+
+NEW_CAPITALS = {
+    "عاصمة أستراليا؟": "كانبرا",
+    "عاصمة البرازيل؟": "برازيليا"
+}
+
+CHEMISTRY = {
+    "ما هو الرمز الكيميائي للماء؟": "H2O",
+    "ما هو الرمز الكيميائي للأكسجين؟": "O2"
+}
+
+ANIMALS = {
+    "ما هو أسرع حيوان في العالم؟": "الفهد",
+    "ما هو أكبر حيوان في العالم؟": "الحوت الأزرق"
+}
+
+# ✅ تم حذف قاموس ALL_GAMES لأنه غير مستخدم فعلياً في الكود
+# (الألعاب تُختار مباشرة في دالة start_specific_game)
 
 funny_responses = {
     "win": ["🎉 {name} فاز! ذكاء خارق 😂", "🏆 {name} كسب! التاج لايق عليك 🤣", "🔥 {name} دمر الجميع! أسطورة!", "😎 {name} جابها في الثمانيات! وحش!", "🧠 {name} مخه شغال صح، عاش!"],
@@ -72,101 +207,6 @@ funny_responses = {
 }
 
 TITLES = {0: "⚔️ مبتدئ", 200: "🛡️ محارب", 400: "⚜️ فارس", 700: "👑 أمير", 1000: "🤴 ملك", 1500: "🦁 أسد الكروب", 2500: "🔥 أسطورة", 5000: "💎 إمبراطور"}
-
-# ------------------- الألعاب الجديدة (10 ألعاب إضافية) -------------------
-# 1. لعبة الكلمات المتقاطعة
-CROSSWORD = {
-    "ما هو الشيء الذي يمشي بلا رجلين ويطير بلا أجنحة؟": "الوقت",
-    "ما هو الشيء الذي كلما زاد نقص؟": "العمر",
-    "ما هو الشيء الذي له أوراق وليس شجرة؟": "الكتاب"
-}
-
-# 2. لعبة السلسلة الغذائية
-FOOD_CHAIN = {
-    "ماذا يأكل الأسد؟": "اللحم",
-    "ماذا تأكل البقرة؟": "العشب",
-    "ماذا يأكل الدب؟": "السمك"
-}
-
-# 3. لعبة الأحجية الرياضية
-MATH_PUZZLES = {
-    "ما هو العدد الذي إذا ضربته في نفسه وأضفت 5 يصبح 30؟": "5",
-    "ما هو العدد الذي إذا قسمته على 2 وأضفت 3 يصبح 10؟": "14"
-}
-
-# 4. لعبة الألغاز المنطقية
-LOGIC_PUZZLES = {
-    "ما هو الشيء الذي تراه في الليل ولا تراه في النهار؟": "القمر",
-    "ما هو الشيء الذي يدخل الماء ولا يبتل؟": "الضوء"
-}
-
-# 5. لعبة الكلمات المفقودة
-MISSING_WORDS = {
-    "أكمل الجملة: الشمس تشرق من ...": "الشرق",
-    "أكمل الجملة: البحر ...": "أزرق"
-}
-
-# 6. لعبة الأشكال الهندسية
-SHAPES = {
-    "ما هو الشكل الذي له 3 أضلاع؟": "مثلث",
-    "ما هو الشكل الذي له 4 أضلاع متساوية؟": "مربع"
-}
-
-# 7. لعبة التواريخ التاريخية
-HISTORY_DATES = {
-    "في أي عام سقطت الخلافة العثمانية؟": "1924",
-    "في أي عام كانت الثورة الفرنسية؟": "1789"
-}
-
-# 8. لعبة الدول والعواصم الجديدة
-NEW_CAPITALS = {
-    "عاصمة أستراليا؟": "كانبرا",
-    "عاصمة البرازيل؟": "برازيليا"
-}
-
-# 9. لعبة الكيمياء
-CHEMISTRY = {
-    "ما هو الرمز الكيميائي للماء؟": "H2O",
-    "ما هو الرمز الكيميائي للأكسجين؟": "O2"
-}
-
-# 10. لعبة الحيوانات
-ANIMALS = {
-    "ما هو أسرع حيوان في العالم؟": "الفهد",
-    "ما هو أكبر حيوان في العالم؟": "الحوت الأزرق"
-}
-
-# دمج جميع الألعاب في قاموس واحد
-ALL_GAMES = {
-    # الألعاب القديمة
-    "g1": {"type": "number_guess", "data": range(1, 101)},
-    "g2": {"type": "math", "data": {}},
-    "g3": {"type": "typing", "data": TYPING_SENTENCES},
-    "g4": {"type": "reverse", "data": SCRAMBLE_WORDS},
-    "g5": {"type": "capitals", "data": COUNTRIES},
-    "g6": {"type": "scramble", "data": SCRAMBLE_WORDS},
-    "g7": {"type": "proverb", "data": PROVERBS},
-    "g8": {"type": "emoji_count", "data": {}},
-    "g9": {"type": "opposite", "data": OPPOSITES},
-    "g10": {"type": "fast_words", "data": FAST_WORDS},
-    "g11": {"type": "trivia", "data": TRIVIA},
-    "g12": {"type": "riddle", "data": RIDDLES},
-    "g13": {"type": "sequence", "data": {}},
-    "g14": {"type": "translate", "data": TRANSLATE_WORDS},
-    "g15": {"type": "emoji_movie", "data": EMOJI_GUESS},
-    "g16": {"type": "dialect", "data": DIALECTS},
-    # الألعاب الجديدة
-    "g17": {"type": "crossword", "data": CROSSWORD},
-    "g18": {"type": "food_chain", "data": FOOD_CHAIN},
-    "g19": {"type": "math_puzzle", "data": MATH_PUZZLES},
-    "g20": {"type": "logic_puzzle", "data": LOGIC_PUZZLES},
-    "g21": {"type": "missing_word", "data": MISSING_WORDS},
-    "g22": {"type": "shape", "data": SHAPES},
-    "g23": {"type": "history_date", "data": HISTORY_DATES},
-    "g24": {"type": "new_capital", "data": NEW_CAPITALS},
-    "g25": {"type": "chemistry", "data": CHEMISTRY},
-    "g26": {"type": "animal", "data": ANIMALS}
-}
 
 # ------------------- إدارة اللاعبين -------------------
 def get_player(user_id):
@@ -182,7 +222,6 @@ def update_player(user_id, username, first_name, score=None, wins=None, losses=N
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # التحقق من وجود اللاعب
     cur.execute("SELECT score FROM players WHERE user_id = %s", (user_id,))
     player = cur.fetchone()
     
@@ -198,7 +237,6 @@ def update_player(user_id, username, first_name, score=None, wins=None, losses=N
     if score is not None:
         current_score = score
     
-    # تحديث البيانات
     cur.execute("""
         UPDATE players SET 
         score = COALESCE(%s, score), 
@@ -208,7 +246,6 @@ def update_player(user_id, username, first_name, score=None, wins=None, losses=N
         WHERE user_id = %s
     """, (score, wins, losses, username, user_id))
     
-    # تحديث اللقب
     new_title = "⚔️ مبتدئ"
     for limit, title in sorted(TITLES.items(), reverse=True):
         if current_score >= limit:
@@ -225,13 +262,11 @@ ADMIN_ID = 7073442874
 
 @bot.message_handler(commands=['sendboint'])
 def send_points_to_player(message):
-    # التحقق من أن المرسل هو الأدمن
     if message.from_user.id != ADMIN_ID:
         bot.reply_to(message, "❌ هذا الأمر للأدمن فقط!")
         return
     
     try:
-        # تنسيق: /sendboint @username [عدد النقاط]
         parts = message.text.split()
         if len(parts) != 3:
             bot.reply_to(message, "❌ الاستخدام الصحيح: /sendboint @username [عدد النقاط]")
@@ -240,7 +275,6 @@ def send_points_to_player(message):
         username = parts[1].replace('@', '')
         points = int(parts[2])
         
-        # البحث عن اللاعب
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("SELECT user_id, score FROM players WHERE username = %s", (username,))
@@ -252,14 +286,12 @@ def send_points_to_player(message):
             conn.close()
             return
         
-        # تحديث النقاط
         new_score = player['score'] + points
         cur.execute("UPDATE players SET score = %s WHERE user_id = %s", (new_score, player['user_id']))
         conn.commit()
         
         bot.reply_to(message, f"✅ تم إضافة {points} نقطة للاعب @{username}\nنقاطه الآن: {new_score}")
         
-        # إرسال إشعار للاعب
         try:
             bot.send_message(player['user_id'], f"🎁 تم إضافة {points} نقطة إلى رصيدك بواسطة الأدمن!\nنقاطك الآن: {new_score}")
         except:
@@ -297,7 +329,6 @@ def handle_buy_click(call):
         return bot.answer_callback_query(call.id, f"❌ نقاطك غير كافية! تحتاج {price} نقطة.", show_alert=True)
     
     if item_key == "assets":
-        # عرض أنواع الملحقات
         markup = InlineKeyboardMarkup()
         for asset_type in ASSET_TYPES:
             markup.row(InlineKeyboardButton(f"🎨 {asset_type}", callback_data=f"asset_type:{asset_type}"))
@@ -313,7 +344,6 @@ def handle_buy_click(call):
             reply_markup=markup
         )
     else:
-        # نفس العملية القديمة للرسم والفيديو
         order_type_map = {"draw": "رسم رسمة", "video": "فيديو تعاوني"}
         pending_orders[user_id] = {'type': order_type_map[item_key], 'price': price, 'state': 'waiting_flag'}
         bot.edit_message_text(
@@ -327,7 +357,6 @@ def handle_asset_type(call):
     user_id = call.from_user.id
     asset_type = call.data.split(':')[1]
     
-    # تخزين نوع الملحقات المختار
     pending_assets[user_id] = {'type': asset_type, 'state': 'waiting_flag'}
     
     bot.edit_message_text(
@@ -339,7 +368,6 @@ def handle_asset_type(call):
 
 @bot.callback_query_handler(func=lambda call: call.data == 'back_to_shop')
 def back_to_shop(call):
-    # العودة إلى المتجر الرئيسي
     shop_cmd(call.message)
 
 @bot.message_handler(content_types=['photo'], func=lambda m: m.from_user.id in pending_assets and pending_assets[m.from_user.id].get('state') == 'waiting_flag')
@@ -371,12 +399,10 @@ def handle_asset_count(message):
         pending_assets[user_id]['count'] = count
         pending_assets[user_id]['state'] = 'waiting_painter'
         
-        # اختيار الرسام
         markup = InlineKeyboardMarkup()
         for painter in PAINTERS:
             markup.row(InlineKeyboardButton(f"🖌️ {painter}", callback_data=f"asset_painter:{painter}"))
         
-        bot.reply_to_message = message
         bot.reply_to(message, f"✅ تم تحديد العدد: {count}\n\n🎨 **الخطوة الأخيرة:** اختر الرسام لتنفيذ طلبك:", reply_markup=markup)
         
     except ValueError:
@@ -393,7 +419,6 @@ def handle_asset_painter(call):
     asset_data = pending_assets[user_id]
     painter_username = painter.replace('@', '')
     
-    # التحقق من وجود الرسام
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("SELECT user_id FROM players WHERE username = %s", (painter_username,))
@@ -413,10 +438,8 @@ def handle_asset_painter(call):
         del pending_assets[user_id]
         return bot.edit_message_text("❌ نقاطك لم تعد تكفي لإتمام الطلب!", call.message.chat.id, call.message.message_id)
     
-    # خصم النقاط
     update_player(user_id, call.from_user.username, call.from_user.first_name, score=player['score'] - price)
     
-    # إرسال الطلب للرسام
     order_text = (
         f"🚨 **طلب ملحقات جديد!** 🚨\n\n"
         f"👤 **اللاعب:** {call.from_user.first_name} (@{call.from_user.username})\n"
@@ -514,86 +537,88 @@ def start_specific_game(message):
     game_id = random.randint(1, 26) if cmd == 'randomgame' else int(cmd.replace('g', ''))
     
     # اختيار اللعبة المناسبة
-    if game_id == 1:  # خمن الرقم
+    if game_id == 1:
         ans, q = str(random.randint(1, 100)), "🔢 خمن الرقم بين 1 و 100"
-    elif game_id == 2:  # رياضيات
+    elif game_id == 2:
         n1, n2, op = random.randint(10, 100), random.randint(1, 50), random.choice(['+', '-', '*'])
         ans, q = str(eval(f"{n1}{op}{n2}")), f"🧮 ناتج: {n1} {op} {n2} = ؟"
-    elif game_id == 3:  # سرعة كتابة
+    elif game_id == 3:
         s = random.choice(TYPING_SENTENCES)
         ans, q = s, f"⌨️ أسرع واحد يكتب الجملة:\n`{s}`"
-    elif game_id == 4:  # اعكس الكلمة
+    elif game_id == 4:
         w = random.choice(SCRAMBLE_WORDS)
         ans, q = w[::-1], f"🔄 اعكس حروف الكلمة: **{w}**"
-    elif game_id == 5:  # عواصم
+    elif game_id == 5:
         c, cap = random.choice(list(COUNTRIES.items()))
         ans, q = cap, f"🌍 ما هي عاصمة **{c}** ؟"
-    elif game_id == 6:  # رتب الحروف
+    elif game_id == 6:
         w = random.choice(SCRAMBLE_WORDS)
         shuffled = ''.join(random.sample(w, len(w)))
         ans, q = w, f"🧩 رتب هذه الحروف لتكوين كلمة: **{shuffled}**"
-    elif game_id == 7:  # أكمل المثل
+    elif game_id == 7:
         h, m = random.choice(list(PROVERBS.items()))
         ans, q = m, f"📜 أكمل المثل الشعبي:\n{h} ... (كلمة واحدة)"
-    elif game_id == 8:  # عد الإيموجي
+    elif game_id == 8:
         e, count = random.choice(["🍎", "🔥", "💎", "💣", "⚔️"]), random.randint(4, 9)
         emojis = [e]*count + [random.choice(["🍌", "🍉", "💧"])]*20
         random.shuffle(emojis)
         ans, q = str(count), f"👀 كم مرة تكرر الإيموجي {e} هنا؟\n{''.join(emojis)}"
-    elif game_id == 9:  # عكس الكلمة
+    elif game_id == 9:
         w, opp = random.choice(list(OPPOSITES.items()))
         ans, q = opp, f"↔️ ما هو عكس كلمة: **{w}** ؟"
-    elif game_id == 10:  # أسرع كلمة
+    elif game_id == 10:
         ans = random.choice(FAST_WORDS)
         q = f"⚡ أسرع شخص يكتب الكلمة:\n**{ans}**"
-    elif game_id == 11:  # أسئلة ثقافية
+    elif game_id == 11:
         qu, a = random.choice(list(TRIVIA.items()))
         ans, q = a, f"🧠 سؤال ثقافي:\n{qu}"
-    elif game_id == 12:  # ألغاز
+    elif game_id == 12:
         qu, a = random.choice(list(RIDDLES.items()))
         ans, q = a, f"🕵️‍♂️ لغز:\n{qu}"
-    elif game_id == 13:  # متتالية أرقام
+    elif game_id == 13:
         start, step = random.randint(1,10), random.randint(2,5)
         ans, q = str(start+4*step), f"🔢 أكمل المتتالية: {start}, {start+step}, {start+2*step}, {start+3*step}, ... ؟"
-    elif game_id == 14:  # ترجمة
+    elif game_id == 14:
         en, ar = random.choice(list(TRANSLATE_WORDS.items()))
         ans, q = ar, f"🇺🇸 ترجم للعربية: '{en}'"
-    elif game_id == 15:  # إيموجي أفلام
+    elif game_id == 15:
         em, mov = random.choice(list(EMOJI_GUESS.items()))
         ans, q = mov, f"🎬 خمن اسم الفيلم من الإيموجي: {em}"
-    elif game_id == 16:  # اللهجات العربية
+    elif game_id == 16:
         qu, a = random.choice(list(DIALECTS.items()))
         ans, q = a, f"🗣️ **تحدي اللهجات العربية:**\n{qu}"
-    elif game_id == 17:  # كلمات متقاطعة
+    elif game_id == 17:
         qu, a = random.choice(list(CROSSWORD.items()))
         ans, q = a, f"🧩 **كلمات متقاطعة:**\n{qu}"
-    elif game_id == 18:  # سلسلة غذائية
+    elif game_id == 18:
         qu, a = random.choice(list(FOOD_CHAIN.items()))
         ans, q = a, f"🍽️ **السلسلة الغذائية:**\n{qu}"
-    elif game_id == 19:  # أحجية رياضية
+    elif game_id == 19:
         qu, a = random.choice(list(MATH_PUZZLES.items()))
         ans, q = a, f"🧮 **أحجية رياضية:**\n{qu}"
-    elif game_id == 20:  # ألغاز منطقية
+    elif game_id == 20:
         qu, a = random.choice(list(LOGIC_PUZZLES.items()))
         ans, q = a, f"🧠 **لغز منطقي:**\n{qu}"
-    elif game_id == 21:  # كلمات مفقودة
+    elif game_id == 21:
         qu, a = random.choice(list(MISSING_WORDS.items()))
         ans, q = a, f"📝 **كلمات مفقودة:**\n{qu}"
-    elif game_id == 22:  # أشكال هندسية
+    elif game_id == 22:
         qu, a = random.choice(list(SHAPES.items()))
         ans, q = a, f"📐 **أشكال هندسية:**\n{qu}"
-    elif game_id == 23:  # تواريخ تاريخية
+    elif game_id == 23:
         qu, a = random.choice(list(HISTORY_DATES.items()))
         ans, q = a, f"📅 **تواريخ تاريخية:**\n{qu}"
-    elif game_id == 24:  # دول وعواصم جديدة
+    elif game_id == 24:
         qu, a = random.choice(list(NEW_CAPITALS.items()))
         ans, q = a, f"🌍 **دول وعواصم جديدة:**\n{qu}"
-    elif game_id == 25:  # كيمياء
+    elif game_id == 25:
         qu, a = random.choice(list(CHEMISTRY.items()))
         ans, q = a, f"🧪 **كيمياء:**\n{qu}"
-    elif game_id == 26:  # حيوانات
+    elif game_id == 26:
         qu, a = random.choice(list(ANIMALS.items()))
         ans, q = a, f"🐾 **حيوانات:**\n{qu}"
+    else:
+        return bot.reply_to(message, "❌ رقم اللعبة غير صالح")
     
     with games_lock:
         active_games[chat_id] = ans.strip().lower()
