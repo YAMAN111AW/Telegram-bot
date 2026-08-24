@@ -65,7 +65,7 @@ SHOP_PRICES = {"assets": 500, "draw": 1000, "video": 2000}
 ASSET_TYPES_AR = ["عيون", "عشوائية", "كرات وخرائط أعلام"]
 ASSET_TYPES_EN = ["Eyes", "Random", "Balls & Flag Maps"]
 ASSET_TYPES_FA = ["چشم‌ها", "تصادفی", "توپ‌ها و نقشه‌های پرچم"]
-PAINTERS = ["@Arabic_Painter1", "@alhilal_bahraini", "@BrahimAnimation", "@moha1234561100"]
+PAINTERS = ["@Arabic_Painter1", "@Palestine_Hilal", "@BrahimAnimation", "@moha1234561100"]
 
 # الألعاب الأساسية
 TYPING_SENTENCES_AR = [
