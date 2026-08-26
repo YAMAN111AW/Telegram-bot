@@ -835,6 +835,56 @@ def handle_group_answers(message):
             point_msg = {"ar": "نقطة", "en": "points", "fa": "امتیاز"}[lang]
             bot.reply_to(message, f"{win_msg}\nالإجابة: {ans}\n🤑 أضفنا لك 15 {point_msg}!")
 
+# ------------------- أمر تصفير النقاط -------------------
+@bot.message_handler(commands=['resetpoints'])
+def reset_points_to_player(message):
+    if message.from_user.id != ADMIN_ID:
+        bot.reply_to(message, "❌ هذا الأمر للأدمن فقط!")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) != 2:
+            bot.reply_to(message, "❌ الاستخدام الصحيح: /resetpoints @username")
+            return
+        
+        username = parts[1].replace('@', '')
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT user_id, score, language FROM players WHERE username = %s", (username,))
+        player = cur.fetchone()
+        
+        if not player:
+            bot.reply_to(message, f"❌ لا يوجد لاعب بهذا الاسم: @{username}")
+            cur.close()
+            conn.close()
+            return
+        
+        lang = player.get('language', 'ar')
+        cur.execute("UPDATE players SET score = 0, title = %s WHERE user_id = %s", 
+                   (TITLES[lang][0], player['user_id']))
+        conn.commit()
+        
+        msgs = {
+            "ar": "🔄 تم تصفير نقاطك بواسطة الأدمن!\nنقاطك الآن: 0",
+            "en": "🔄 Your points have been reset by admin!\nYour score: 0",
+            "fa": "🔄 امتیاز شما توسط ادمین صفر شد!\nامتیاز شما: 0"
+        }
+        
+        bot.reply_to(message, f"✅ تم تصفير نقاط اللاعب @{username}\nنقاطه الآن: 0")
+        
+        try:
+            bot.send_message(player['user_id'], msgs[lang])
+        except:
+            pass
+        
+        cur.close()
+        conn.close()
+        
+    except Exception as e:
+        bot.reply_to(message, f"❌ حدث خطأ: {str(e)}")
+
 # ------------------- تشغيل البوت -------------------
 if __name__ == "__main__":
     print("✅ البوت متعدد اللغات شغال ومستقر...")
